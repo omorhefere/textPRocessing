@@ -22,8 +22,7 @@ class Retrieve:
         for key in document.keys():
             if key in query.keys():
                 docs[key]=(query[key]/document[key])
-        
-            
+           
         return sorted(docs, key=docs.get,reverse=True)
         
     def candidateSet(self,query):
@@ -44,26 +43,54 @@ class Retrieve:
     def forQuery(self,query):
         collectionSize = len(self.size()) 
         invertedIndex=self.index
-
+        docsToDocVec = {}
         #set of documents containg at least on query term
         candidateSet = self.candidateSet(query)
-        docsToDocVec = {}
-        binaryXDocVec = {}
-        
+        if self.termWeighting == 'binary':
+         
+            binaryXDocVec = {}
+                                   
+            #find the size of each binary document vector           
+            for doc in candidateSet:
+                binaryVecWeights = []
+                binaryWeights = []
+                
+                #find the size of each binary document vector
+                for k,v in invertedIndex.items():
+                    if k in query.keys() and doc in v:           
+                        binaryWeights.append(1)
+                    if doc in v:
+                        binaryVecWeights.append(1**2)
+                docsToDocVec[doc]= np.sqrt(np.sum(binaryVecWeights))
+                binaryXDocVec[doc]=np.sum(binaryWeights)
+                        
+                
+            return self.similarity(binaryXDocVec,docsToDocVec)
+        elif self.termWeighting == 'tf':
+             tfXDocVec = {}
+                            
+             #find the size of each binary document vector           
+             for doc in candidateSet:
+                tfVecWeights = []
+                tfWeights = []
+                for k in invertedIndex:
                     
-        #find the size of each binary document vector           
-        for doc in candidateSet:
-            binaryVecWeights = []
-            binaryWeights = []
-            
-            #find the size of each binary document vector
-            for k,v in invertedIndex.items():
-                if k in query.keys() and doc in v:           
-                    binaryWeights.append(1)
-                if doc in v:
-                    binaryVecWeights.append(1**2)
-            docsToDocVec[doc]= np.sqrt(np.sum(binaryVecWeights))
-            binaryXDocVec[doc]=np.sum(binaryWeights)
-                    
-            
-        return self.similarity(binaryXDocVec,docsToDocVec)
+                    if invertedIndex.get(k, False).get(doc, False) != False :
+                        tfVecWeights.append((invertedIndex.get(k).get(doc))**2)
+                    if k in query.keys():
+                        if invertedIndex.get(k, False).get(doc, False) != False :
+                            if query[k] >1:
+                                tfWeights.append(query[k] * invertedIndex.get(k).get(doc) )
+                            else:
+                                tfWeights.append(invertedIndex.get(k).get(doc) )
+                            
+                docsToDocVec[doc]= np.sqrt(np.sum(tfVecWeights))
+                tfXDocVec[doc]=np.sum(tfWeights)
+
+                
+                        
+                        
+                
+             return self.similarity(tfXDocVec,docsToDocVec)
+        else:
+            print('tfidf')

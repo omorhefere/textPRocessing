@@ -132,14 +132,15 @@ if __name__ == '__main__':
     
     queries = Queries(config.queriesFile)
     allResults = ResultStore(config.outfile)
-
+    import time
+    start_time = time.time()
     for qid in queries.qids():
         query = queries.getQuery(qid)
         results = retrieve.forQuery(query)
         
        
         allResults.store(qid,results)
-    
+    print("--- %s seconds ---" % (time.time() - start_time))
     allResults.output()
     
 
