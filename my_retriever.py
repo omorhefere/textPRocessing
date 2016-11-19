@@ -44,6 +44,7 @@ class Retrieve:
         collectionSize = len(self.size()) 
         invertedIndex=self.index
         docsToDocVec = {}
+
         #set of documents containg at least on query term
         candidateSet = self.candidateSet(query)
         if self.termWeighting == 'binary':
@@ -93,4 +94,26 @@ class Retrieve:
                 
              return self.similarity(tfXDocVec,docsToDocVec)
         else:
-            print('tfidf')
+             tfidfXDocVec = {}
+                            
+             #find the size of each binary document vector           
+             for doc in candidateSet:
+                tfidfVecWeights = []
+                tfidfWeights = []
+                for k in invertedIndex:
+                    documentFrequency = len(invertedIndex[k])   
+                    idf_calculation = collectionSize/documentFrequency
+                    idf = math.log(idf_calculation)
+                    
+                    if invertedIndex.get(k, False).get(doc, False) != False :
+                        tfidfVecWeights.append((invertedIndex.get(k).get(doc) *idf)**2)
+                    if k in query.keys():
+                        if invertedIndex.get(k, False).get(doc, False) != False :
+                            if query[k] >1:
+                                tfidfWeights.append(query[k] * invertedIndex.get(k).get(doc) *idf )
+                            else:
+                                tfidfWeights.append(invertedIndex.get(k).get(doc) *idf)
+                            
+                docsToDocVec[doc]= np.sqrt(np.sum(tfidfVecWeights))
+                tfidfXDocVec[doc]=np.sum(tfidfWeights)
+             return self.similarity(tfidfXDocVec,docsToDocVec)
